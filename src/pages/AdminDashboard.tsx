@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import config from '../config';
 import { 
   Trash2, 
   Edit, 
@@ -93,7 +94,8 @@ interface TeamMember {
   order: number;
 }
 
-const API_URL = 'http://localhost:5001/api';
+// Replace the hardcoded API_URL with config.apiUrl
+const API_URL = config.apiUrl;
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'pets' | 'admins' | 'forms' | 'donations' | 'team'>('overview');
@@ -1001,6 +1003,50 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      const file = event.target.files?.[0];
+      if (!file) {
+        toast.error('Lütfen bir resim dosyası seçin');
+        return;
+      }
+
+      // Dosya boyutu kontrolü (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Dosya boyutu 5MB\'dan küçük olmalıdır');
+        return;
+      }
+
+      // Dosya tipi kontrolü
+      if (!file.type.startsWith('image/')) {
+        toast.error('Lütfen geçerli bir resim dosyası seçin');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      toast.info('Resim yükleniyor...');
+
+      const response = await fetch(`${API_URL}/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Resim yükleme başarısız');
+      }
+
+      const data = await response.json();
+      setFormData(prev => ({ ...prev, image: data.imageUrl }));
+      toast.success('Resim başarıyla yüklendi');
+    } catch (error) {
+      console.error('Resim yükleme hatası:', error);
+      toast.error(error instanceof Error ? error.message : 'Resim yüklenirken bir hata oluştu');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -1477,41 +1523,51 @@ const AdminDashboard = () => {
 
       {/* Add Modal */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">Yeni Hayvan Ekle</h2>
-            <form onSubmit={handleAddPet} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">İsim</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Tür</label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                  required
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg w-full max-w-lg mx-auto my-8">
+            <div className="p-4 sm:p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold">Yeni Hayvan Ekle</h2>
+                <button
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
                 >
-                  <option value="">Seçiniz</option>
-                  <option value="Kedi">Kedi</option>
-                  <option value="Köpek">Köpek</option>
-                </select>
+                  <X className="w-6 h-6" />
+                </button>
               </div>
+              <form onSubmit={handleAddPet} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">İsim</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      required
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Yaş</label>
-                <input
-                  type="text"
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tür</label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      required
+                    >
+                      <option value="">Seçiniz</option>
+                      <option value="Kedi">Kedi</option>
+                      <option value="Köpek">Köpek</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Yaş</label>
+                    <input
+                      type="text"
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                   required
                   placeholder="Örn: 2 yaş"
@@ -1545,15 +1601,16 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Resim URL</label>
+                <label className="block text-sm font-medium text-gray-700">Hayvan Fotoğrafı</label>
                 <input
-                  type="url"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                  required
-                  placeholder="https://example.com/image.jpg"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="mt-1 block w-full"
                 />
+                {formData.image && (
+                  <img src={formData.image} alt="Preview" className="mt-2 h-32 w-32 object-cover rounded-lg" />
+                )}
               </div>
 
               <div>
@@ -1579,64 +1636,75 @@ const AdminDashboard = () => {
                   placeholder="Hayvanın karakteri hakkında bilgi"
                 />
               </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md"
-                >
-                  Ekle
-                </button>
-              </div>
-            </form>
+                </div>
+                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddModalOpen(false)}
+                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                  >
+                    Ekle
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center">
-          <div className="bg-white rounded-lg p-8 max-w-md w-full">
-            <h2 className="text-2xl font-bold mb-4">Hayvan Düzenle</h2>
-            <form onSubmit={handleEditPet} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">İsim</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Tür</label>
-                <select
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                  required
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg w-full max-w-lg mx-auto my-8">
+            <div className="p-4 sm:p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl sm:text-2xl font-bold">Hayvan Düzenle</h2>
+                <button
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
                 >
-                  <option value="">Seçiniz</option>
-                  <option value="Kedi">Kedi</option>
-                  <option value="Köpek">Köpek</option>
-                </select>
+                  <X className="w-6 h-6" />
+                </button>
               </div>
+              <form onSubmit={handleEditPet} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">İsim</label>
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      required
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Yaş</label>
-                <input
-                  type="text"
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Tür</label>
+                    <select
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
+                      required
+                    >
+                      <option value="">Seçiniz</option>
+                      <option value="Kedi">Kedi</option>
+                      <option value="Köpek">Köpek</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Yaş</label>
+                    <input
+                      type="text"
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
                   className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                   required
                   placeholder="Örn: 2 yaş"
@@ -1670,15 +1738,16 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Resim URL</label>
+                <label className="block text-sm font-medium text-gray-700">Hayvan Fotoğrafı</label>
                 <input
-                  type="url"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
-                  required
-                  placeholder="https://example.com/image.jpg"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="mt-1 block w-full"
                 />
+                {formData.image && (
+                  <img src={formData.image} alt="Preview" className="mt-2 h-32 w-32 object-cover rounded-lg" />
+                )}
               </div>
 
               <div>
@@ -1704,23 +1773,24 @@ const AdminDashboard = () => {
                   placeholder="Hayvanın karakteri hakkında bilgi"
                 />
               </div>
-
-              <div className="flex justify-end space-x-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-md"
-                >
-                  İptal
-                </button>
-                <button
-                  type="submit"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-md"
-                >
-                  Güncelle
-                </button>
-              </div>
-            </form>
+                </div>
+                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditModalOpen(false)}
+                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    İptal
+                  </button>
+                  <button
+                    type="submit"
+                    className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+                  >
+                    Güncelle
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
