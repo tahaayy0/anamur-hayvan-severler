@@ -11,6 +11,9 @@ const Donation = require('./models/Donation');
 const auth = require('./middleware/auth');
 const Form = require('./models/Form');
 const Team = require('./models/Team');
+const upload = require('./config/multer');
+const { uploadToImgBB } = require('./services/uploadService');
+const fs = require('fs').promises;
 
 const app = express();
 
@@ -451,6 +454,59 @@ app.delete('/api/admin/team/:id', auth, async (req, res) => {
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'Dosya boyutu 5MB\'dan küçük olmalıdır.' });
+    }
+    return res.status(400).json({ message: 'Dosya yükleme hatası: ' + err.message });
+  }
+  next(err);
+});
+
+// Image Upload Route
+app.post('/api/upload', (req, res) => {
+  upload.single('image')(req, res, async (err) => {
+    try {
+      if (err) {
+        console.error('Multer hatası:', err);
+        return res.status(400).json({ message: err.message });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: 'Lütfen bir resim dosyası seçin' });
+      }
+
+      console.log('Dosya başarıyla yüklendi:', req.file);
+
+      // Upload to ImgBB
+      const imageUrl = await uploadToImgBB(req.file.path);
+      console.log('ImgBB URL:', imageUrl);
+
+      // Delete the local file after upload
+      await fs.unlink(req.file.path);
+      console.log('Geçici dosya silindi');
+
+      res.json({ imageUrl });
+    } catch (error) {
+      console.error('Yükleme hatası:', error);
+      // Temizlik: Hata durumunda geçici dosyayı sil
+      if (req.file) {
+        try {
+          await fs.unlink(req.file.path);
+        } catch (unlinkError) {
+          console.error('Geçici dosya silinirken hata:', unlinkError);
+        }
+      }
+      res.status(500).json({ 
+        message: 'Resim yükleme başarısız',
+        error: error.message 
+      });
+    }
+  });
 });
 
 const PORT = process.env.PORT || 5000;
