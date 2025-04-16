@@ -1,6 +1,6 @@
 const config = {
   apiUrl: process.env.NODE_ENV === 'production'
-    ? 'https://your-vercel-app-url.vercel.app/api'
+    ? 'https://anamurhayvanseverler-aroozsapy-taha-yerdekalmazers-projects.vercel.app/api'
     : 'http://localhost:5001/api'
 };
 

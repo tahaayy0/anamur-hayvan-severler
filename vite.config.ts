@@ -7,6 +7,10 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
+  build: {
+    outDir: 'dist',
+    sourcemap: true
+  },
   server: {
     port: 3000,
     open: true

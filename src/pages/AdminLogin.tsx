@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const API_URL = 'http://localhost:5001/api';
+import config from '../config';
 
 const AdminLogin = () => {
   const [username, setUsername] = useState('');
@@ -12,7 +11,7 @@ const AdminLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${API_URL}/admin/login`, {
+      const response = await fetch(`${config.apiUrl}/admin/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

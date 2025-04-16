@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, PawPrint, Users } from 'lucide-react';
 import RecentDonations from '../components/RecentDonations';
+import config from '../config';
 
 interface Pet {
   _id: string;
@@ -16,15 +17,13 @@ interface Pet {
   isAdopted: boolean;
 }
 
-const API_URL = 'http://localhost:5001/api';
-
 const Home = () => {
   const [pets, setPets] = useState<Pet[]>([]);
 
   useEffect(() => {
     const fetchPets = async () => {
       try {
-        const response = await fetch(`${API_URL}/pets`);
+        const response = await fetch(`${config.apiUrl}/pets`);
         const data = await response.json();
         // Sadece ilk 3 hayvanı göster
         setPets(data.slice(0, 3));

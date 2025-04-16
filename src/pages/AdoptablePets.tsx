@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
+import config from '../config';
 
 const API_URL = 'http://localhost:5001/api';
 
@@ -28,7 +29,7 @@ const AdoptablePets = () => {
 
   const fetchPets = async () => {
     try {
-      const response = await fetch(`${API_URL}/pets`);
+      const response = await fetch(`${config.apiUrl}/pets`);
       if (!response.ok) {
         throw new Error('Veriler alınamadı');
       }

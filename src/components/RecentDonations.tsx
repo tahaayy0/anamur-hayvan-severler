@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Heart } from 'lucide-react';
+import config from '../config';
 
 interface Donation {
   _id: string;
@@ -10,15 +11,13 @@ interface Donation {
   isAnonymous?: boolean;
 }
 
-const API_URL = 'http://localhost:5001/api';
-
 const RecentDonations = () => {
   const [donations, setDonations] = useState<Donation[]>([]);
 
   useEffect(() => {
     const fetchDonations = async () => {
       try {
-        const response = await fetch(`${API_URL}/donations/approved`);
+        const response = await fetch(`${config.apiUrl}/donations/approved`);
         const data = await response.json();
         setDonations(data);
       } catch (error) {
